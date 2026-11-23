@@ -1,0 +1,24 @@
+/vendor/
+/.env
+/.phpunit.cache/
+/database/*.sqlite*
+/storage/**/*.key
+/public/storage
+/storage/logs/*
+/storage/framework/views/*
+/storage/framework/sessions/*
+/storage/framework/cache/data/*
+/storage/app/public/*
+/node_modules/
+/public/build/
+/public/hot
+/npm-debug.log*
+
+# Archivos locales y privados
+.DS_Store
+/.env.*
+!/.env.example
+/storage/app/private/*
+!/storage/app/private/.gitignore
+/.phpunit.result.cache
+/storage/framework/cache/facade-*.php
