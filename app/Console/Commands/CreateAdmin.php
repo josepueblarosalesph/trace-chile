@@ -8,7 +8,7 @@ use Illuminate\Validation\Rules\Password;
 
 class CreateAdmin extends Command
 {
-    protected $signature = 'trace:admin';
+    protected $signature = 'trace:admin {--email= : Correo del administrador, sin captura interactiva}';
     protected $description = 'Crear una cuenta administradora de Trace Chile';
 
     public function handle(): int
@@ -16,7 +16,8 @@ class CreateAdmin extends Command
         $name = trim((string) $this->ask('Nombre'));
 
         do {
-            $email = mb_strtolower(trim((string) $this->ask('Correo')));
+            $input = $this->option('email') ?? $this->ask('Correo');
+            $email = mb_strtolower(trim((string) $input));
             $validation = Validator::make(['email' => $email], [
                 'email' => 'required|email|max:255|unique:users,email',
             ], [
@@ -28,7 +29,16 @@ class CreateAdmin extends Command
             foreach ($validation->errors()->all() as $error) {
                 $this->error($error);
             }
-        } while ($validation->fails());
+            if ($validation->fails()) {
+                if ($this->option('email') !== null) {
+                    return self::FAILURE;
+                }
+                continue;
+            }
+            if ($this->option('email') !== null || $this->confirm('¿Es correcto este correo: '.$email.'?', false)) {
+                break;
+            }
+        } while (true);
 
         $password = $this->secret('Contraseña (mínimo 12 caracteres)');
         $validation = Validator::make(compact('name', 'password'), [

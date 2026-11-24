@@ -15,6 +15,7 @@ class CreateAdminTest extends TestCase
         $this->artisan('trace:admin')
             ->expectsQuestion('Nombre', ' Ana ')
             ->expectsQuestion('Correo', ' Admin@Example.com ')
+            ->expectsConfirmation('¿Es correcto este correo: admin@example.com?', 'yes')
             ->expectsQuestion('Contraseña (mínimo 12 caracteres)', 'secure-password-123')
             ->assertSuccessful();
 
@@ -31,6 +32,7 @@ class CreateAdminTest extends TestCase
             ->expectsQuestion('Correo', 'correo-invalido')
             ->expectsOutput('El correo no tiene un formato válido. Ejemplo: nombre@dominio.cl')
             ->expectsQuestion('Correo', 'ana@example.com')
+            ->expectsConfirmation('¿Es correcto este correo: ana@example.com?', 'yes')
             ->expectsQuestion('Contraseña (mínimo 12 caracteres)', 'secure-password-123')
             ->assertSuccessful();
         $this->assertDatabaseHas('users', ['email' => 'ana@example.com', 'is_admin' => true]);
@@ -44,8 +46,31 @@ class CreateAdminTest extends TestCase
             ->expectsQuestion('Correo', 'used@example.com')
             ->expectsOutput('Ya existe una cuenta con ese correo. Usa otro correo.')
             ->expectsQuestion('Correo', 'ana@example.com')
+            ->expectsConfirmation('¿Es correcto este correo: ana@example.com?', 'yes')
             ->expectsQuestion('Contraseña (mínimo 12 caracteres)', 'secure-password-123')
             ->assertSuccessful();
         $this->assertDatabaseCount('users', 2);
+    }
+    public function test_received_email_can_be_rejected_before_saving(): void
+    {
+        $this->artisan('trace:admin')
+            ->expectsQuestion('Nombre', 'Jose')
+            ->expectsQuestion('Correo', 'jose-puebla?@hotmail.cl')
+            ->expectsConfirmation('¿Es correcto este correo: jose-puebla?@hotmail.cl?', 'no')
+            ->expectsQuestion('Correo', 'jose-puebla@hotmail.cl')
+            ->expectsConfirmation('¿Es correcto este correo: jose-puebla@hotmail.cl?', 'yes')
+            ->expectsQuestion('Contraseña (mínimo 12 caracteres)', 'secure-password-123')
+            ->assertSuccessful();
+        $this->assertDatabaseHas('users', ['email' => 'jose-puebla@hotmail.cl']);
+        $this->assertDatabaseMissing('users', ['email' => 'jose-puebla?@hotmail.cl']);
+    }
+
+    public function test_email_option_preserves_the_supplied_address(): void
+    {
+        $this->artisan('trace:admin', ['--email' => 'jose-puebla@hotmail.cl'])
+            ->expectsQuestion('Nombre', 'Jose')
+            ->expectsQuestion('Contraseña (mínimo 12 caracteres)', 'secure-password-123')
+            ->assertSuccessful();
+        $this->assertDatabaseHas('users', ['email' => 'jose-puebla@hotmail.cl']);
     }
 }
